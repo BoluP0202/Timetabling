@@ -21,6 +21,8 @@
 *.a
 *.la
 *.lo
+*.ipynb_checkpoints
+
 
 # Shared objects (inc. Windows DLLs)
 *.dll
