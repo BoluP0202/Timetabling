@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import re
+import pickle
 
 class Subject:
     def __init__(self, code, title, units):
@@ -122,6 +123,69 @@ def check_blocks(df):
                     block_sf += 1
 
     return block_tally,block_len
-
-def timetable_to_csv_table(c_sem, tot_sess, sess):
+def timetable_to_values(df):
+    subjects = subjects_to_object_list(df)
+    c_sem = len(subjects)
+    earlies = check_early(df)
+    tot_sess = count_total(subjects)
+    x, y = check_late(df)
+    popday = 5 - check_freeday(df)
+    total_breaks, break_no, break_list = check_breaks(df)
+    late_pday = x/len(y)
+    tot_block, blocks = check_blocks(df)
+    largest_block = max(blocks)
+    block_pday = tot_block/popday
+    sesspday = tot_sess/popday
+    avg_blk = sum(blocks)/tot_block
+    avg_brk = total_breaks/break_no
     
+    tarb = pd.DataFrame(columns = ['C/semester', 'total sessions', 'sess/popday', 'Number of Blocks', 'Block/pday',
+       'Avergae Block size', 'Norm Block', 'Early Sessions', 'Late/day',
+       'Avg Break', 'Combined Score', 'Score based Rating'])
+    tarb.loc[1,'C/semester'] = len(subjects)
+    tarb.loc[1,'total sessions'] = tot_sess
+    tarb.loc[1,'sess/popday'] = sesspday
+    tarb.loc[1,'Number of Blocks'] =  tot_block
+    tarb.loc[1,'Block/pday'] = block_pday
+    tarb.loc[1,'Avergae Block size'] = avg_blk
+    tarb.loc[1,'Norm Block'] = largest_block
+    tarb.loc[1,'Early Sessions'] = earlies
+    tarb.loc[1,'Late/day'] = late_pday
+    tarb.loc[1,'Avg Break'] = avg_brk
+    return tarb
+
+def de_nan(df):
+    df = df.replace(np.nan, 0)
+    return df
+def normnew(original, new):
+    new = (new - original.min())/(original.max()-original.min())
+    new['Norm Block'][1] = ((new['Norm Block'][1]-2)**2)/((6-2)**2)
+    return new
+weight = (0.28, 0.22, 0.1, 0.15, 0.25, 0.2, 0.6, 0.15, 0.3, 0.03)
+def scoring(df):
+    positives = ((df['Number of Blocks'] * weight[0]) + (df['Block/pday']*weight[1]))
+    
+    negatives = ((df['Avg Break'] * weight[2]) + (df['Early Sessions'] * weight[3])
+                 + (df['Late/day'] * weight[4]) + (df['Norm Block']* weight[5])  
+                 + (df['Avergae Block size'] * weight[6]))
+    
+    penalty = (((df['Norm Block'] + df['Avg Break'])/4) * weight[7]) +((df['C/semester']-df['Number of Blocks'])*.6)
+            #+((abs(df['Number of Blocks']-df['total sessions']).item()/df['total sessions'])*weight[8]))
+    
+    bonus = (df['total sessions']*weight[9])
+    score = positives + bonus - penalty - negatives
+    df['Combined Score'] = (score - (-1.1025604865868774))/(0.27416115190939894- (-1.1025604865868774))
+    above_median = df['Combined Score'] >= 0.6084953052017024
+
+    df['Score based Rating'] = np.where(above_median, 1, 0)
+    return df
+
+
+
+def predict_rating(data):
+    loaded_model = pickle.load(open('Learned.sav', 'rb'))
+    rating = loaded_model.predict(data)
+    if rating[0] == 1:
+        print('Its good')
+    else:
+        print('Its bad')
