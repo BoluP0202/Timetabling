@@ -1,0 +1,11 @@
+,index,Code,Courses,Units,TIME,M,TU,W,TH,F
+0,0,ISM 202,Media Production Processes ,3,9-10AM,-,-,ISM 205,-,-
+1,1,ISM 209,Web-Based Technologies & Multimedia,3,10-11AM,-,ISM 202,ISM 205,-,-
+2,2,ISM 211, Introduction to DataBase System,3,11-12PM,ISM 207,ISM 202,-,-,GST 202
+3,3,ISM 201,"Introduction to Audio, Video & Graphics Editing Packages",2,12-1PM,ISM 207,ISM 202,ISM 211,-,GST 202
+4,4,ISM 205,Freehand Sketches,2,1-2PM,-,-,ISM 211,ISM 201,-
+5,5,ISM 207,Digital Colour Technology,2,2-3PM,-,ISM 213,ISM 211,ISM 201,-
+6,6,ISM 213,Culture and Critical Analysis,2,3-4PM,GST 201,ISM 213,-,-,ISM 209
+7,7,GST 201,Communication in English III,2,4-5PM,GST 201,-,ENT 201,-,ISM 209
+8,8,GST 202,Philosophical Anthropology,2,5-6PM,-,-,ENT 201,-,ISM 209
+9,9,ENT 201,Entrepreneurship I,2,6-7PM,-,-,-,-,-
