@@ -182,10 +182,52 @@ def scoring(df):
 
 
 
-def predict_rating(data):
+def feedback(data):
+    block_model =pickle.load(open('BlockModel.sav','rb'))
+    break_model = pickle.load(open('Breakmodel.sav','rb'))
+    earlate_model = pickle.load(open('Early-LateModel.sav', 'rb'))
+    session_model = pickle.load(open('SessionsModel','rb'))
+
+    blk_cols = ['Number of Blocks','Block/pday','Avergae Block size','Norm Block']
+    sess_cols = ['total sessions', 'sess/popday']
+    earlate_cols = ['Early Sessions', 'Late/day']
+
+    blk_data = pd.DataFrame(data,columns= blk_cols)
+    
+    brk_data = data['Avg Break']
+    brk_data = brk_data.to_frame()
+    sess_data = pd.DataFrame(data, columns = sess_cols)
+    earlate_data = pd.DataFrame(data, columns = earlate_cols)
+
+    blk_fb = block_model.predict(blk_data)
+    brk_fb = break_model.predict(brk_data)
+    earlate_fb = earlate_model.predict(earlate_data)
+    sess_fb = session_model.predict(sess_data)
+    print('In order of most impactful to least:')
+    if blk_fb == [0]:
+        print('The blocks are wack yo')
+    else:
+        print('The blocks are pretty alright')
+    
+    if earlate_fb ==[0]:
+        print('The timetable likely has too many sessions outside of the optimal learning zone (10AM to 3PM), consider adjustments there')
+    else:
+        print('There arent major problems with the number of early or late classes')
+
+    if sess_fb == [0]:
+        print('This course or semester is likely harder to timetable for, you might want to cosider using uo the free day, or adjusting the balance between days')
+    else:
+        print('The issue is likely not related to the nature of this specific course')
+        
+    if brk_fb == [0]:
+        print('The breaks are wack yo, maybe reduce them or have them more utilised')
+    else:
+        print('the breaks may not be the issue though')
+    
     loaded_model = pickle.load(open('Learned.sav', 'rb'))
     rating = loaded_model.predict(data)
+    
     if rating[0] == 1:
-        print('Its good')
+        print('Overall, Its good')
     else:
-        print('Its bad')
+        print('Overall, Its bad')
