@@ -131,13 +131,19 @@ def timetable_to_values(df):
     x, y = check_late(df)
     popday = 5 - check_freeday(df)
     total_breaks, break_no, break_list = check_breaks(df)
-    late_pday = x/len(y)
+    if x == 0:
+        late_pday = 0
+    else:
+        late_pday = x/len(y)
     tot_block, blocks = check_blocks(df)
     largest_block = max(blocks)
     block_pday = tot_block/popday
     sesspday = tot_sess/popday
     avg_blk = sum(blocks)/tot_block
-    avg_brk = total_breaks/break_no
+    if break_no == 0:
+        avg_brk = 0
+    else:
+        avg_brk = total_breaks/break_no
     
     tarb = pd.DataFrame(columns = ['C/semester', 'total sessions', 'sess/popday', 'Number of Blocks', 'Block/pday',
        'Avergae Block size', 'Norm Block', 'Early Sessions', 'Late/day',
@@ -159,9 +165,9 @@ def de_nan(df):
     return df
 def normnew(original, new):
     new = (new - original.min())/(original.max()-original.min())
-    new['Norm Block'][1] = ((new['Norm Block'][1]-2)**2)/((6-2)**2)
+    new.loc[1,'Norm Block'] = ((new.loc[1,'Norm Block']-2)**2)/((6-2)**2)
     return new
-weight = (0.28, 0.22, 0.1, 0.15, 0.25, 0.2, 0.6, 0.15, 0.3, 0.03)
+weight = (0.28, 0.22, 0.1, 0.15, 0.35, 0.2, 0.6, 0.15, 0.3, 0.03)
 def scoring(df):
     positives = ((df['Number of Blocks'] * weight[0]) + (df['Block/pday']*weight[1]))
     
@@ -183,10 +189,10 @@ def scoring(df):
 
 
 def feedback(data):
-    block_model =pickle.load(open('BlockModel.sav','rb'))
-    break_model = pickle.load(open('Breakmodel.sav','rb'))
-    earlate_model = pickle.load(open('Early-LateModel.sav', 'rb'))
-    session_model = pickle.load(open('SessionsModel','rb'))
+    block_model =pickle.load(open('Models/BlockModel.sav','rb'))
+    break_model = pickle.load(open('Models/Breakmodel.sav','rb'))
+    earlate_model = pickle.load(open('Models/Early-LateModel.sav', 'rb'))
+    session_model = pickle.load(open('Models/SessionsModel.sav','rb'))
 
     blk_cols = ['Number of Blocks','Block/pday','Avergae Block size','Norm Block']
     sess_cols = ['total sessions', 'sess/popday']
@@ -203,31 +209,36 @@ def feedback(data):
     brk_fb = break_model.predict(brk_data)
     earlate_fb = earlate_model.predict(earlate_data)
     sess_fb = session_model.predict(sess_data)
-    print('In order of most impactful to least:')
-    if blk_fb == [0]:
-        print('The blocks are wack yo')
+
+        
+    loaded_model = pickle.load(open('Models/Learned.sav', 'rb'))
+    rating = loaded_model.predict(data)
+
+    if rating[0] == 1:
+        print('Overall, Its good')
     else:
-        print('The blocks are pretty alright')
+        print('Overall, Its poor')
+
+    print('Some Ideas, in order of most impactful/reliable to least:')
+    if blk_fb == [0]:
+        print('The blocks are rating poorly, which means that there are too many classes grouped together, too frequently. Consider adding breaks to split them up or moving a period to a less congested day')
+    else:
+        print('The blocks are in order')
     
     if earlate_fb ==[0]:
         print('The timetable likely has too many sessions outside of the optimal learning zone (10AM to 3PM), consider adjustments there')
     else:
-        print('There arent major problems with the number of early or late classes')
+        print('There arent major problems with the number of early or late classes (those outside 10AM-3PM')
 
     if sess_fb == [0]:
-        print('This course or semester is likely harder to timetable for, you might want to cosider using uo the free day, or adjusting the balance between days')
+        print('This course or semester is likely harder to create timetables for, you might want to cosider using up the free day(if it exists), or adjusting the overall balance between the days')
     else:
         print('The issue is likely not related to the nature of this specific course')
         
     if brk_fb == [0]:
-        print('The breaks are wack yo, maybe reduce them or have them more utilised')
+        print('The breaks are likely too large; consider shortening them, or moving one some classes around')
     else:
-        print('the breaks may not be the issue though')
-    
-    loaded_model = pickle.load(open('Learned.sav', 'rb'))
-    rating = loaded_model.predict(data)
-    
-    if rating[0] == 1:
-        print('Overall, Its good')
-    else:
-        print('Overall, Its bad')
+        print('the breaks seem to be in order, not too large or frequent. but breaks are often consequential, not causal of issues')
+
+
+    return rating[0]
